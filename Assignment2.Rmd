@@ -23,9 +23,6 @@ library(tidyverse)
 library(ggplot2)
 library(reshape2)
 
-#set working directory -- change this based on your settings
-setwd("C:/Users/kiarak/Desktop/Research/Github stuff/Assignment2_KKappelmann")
-
 #load files -- change this based on your settings
 geno <- read.delim("C:/Users/kiarak/Desktop/Research/Github stuff/Assignment2_KKappelmann/fang_et_al_genotypes.txt", header=F)
 snp <- read.delim("C:/Users/kiarak/Desktop/Research/Github stuff/Assignment2_KKappelmann/snp_position.txt")
