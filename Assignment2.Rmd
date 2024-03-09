@@ -1,0 +1,174 @@
+---
+title: "R_assignment"
+author: "Kiara Kappelmann"
+date: "2024-03-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+#preparation
+
+#load libraries
+library(tidyverse)
+library(ggplot2)
+library(reshape2)
+
+#set working directory -- change this based on your settings
+setwd("C:/Users/kiarak/Desktop/Research/Github stuff/Assignment2_KKappelmann")
+
+#load files -- change this based on your settings
+geno <- read.delim("C:/Users/kiarak/Desktop/Research/Github stuff/Assignment2_KKappelmann/fang_et_al_genotypes.txt", header=F)
+snp <- read.delim("C:/Users/kiarak/Desktop/Research/Github stuff/Assignment2_KKappelmann/snp_position.txt")
+
+```
+
+## Inspecting the files
+
+```{r}
+file.info("fang_et_al_genotypes.txt")
+file.info("snp_position.txt")
+view(geno)
+view(snp)
+is.data.frame(geno)
+is.data.frame(snp)
+nrow(geno)
+nrow(snp)
+ncol(geno)
+ncol(snp)
+str(geno)
+str(snp)
+
+```
+
+## Data processing 
+### Quick note - this code processes the corn and teo files at the same time
+
+### Filtering the files for the groups of interest into new files denoted with "_new"
+```{r}
+geno_new <- geno[ 0:2783 , 3:986]
+snp_new <- select (snp, SNP_ID, Chromosome, Position)
+corn <- filter(geno_new,`V3` %in% c("Group","ZMMIL", "ZMMMR" ,"ZMMLR"))
+teo <- filter(geno_new, `V3` %in% c("Group","ZMPBA","ZMPIL","ZMPJA"))
+corn <- corn[ ,2:984]
+teo <- teo[ ,2:984]
+
+```
+### Now that we have files containing the groups we want, let's convert the matrices to data frames and transpose them
+
+```{r}
+corn_trans <- as.data.frame(t(corn),stringsAsFactors = FALSE)
+teo_trans <- as.data.frame(t(teo),stringsAsFactors = FALSE)
+names(corn_trans)[1]<-"SNP_ID"
+names(teo_trans)[1]<-"SNP_ID"
+
+view(teo_trans)
+view(corn_trans)
+```
+
+### Now we can join the two files (snps + corn/teo) using the common column
+```{r}
+corn_join <- merge(snp_new,corn_trans)
+teo_join <- merge(snp_new,teo_trans)
+
+```
+## Let's start making the files we need
+### Starting with chromosome position values in increasing order
+#### Modify the directory path based on your settings
+```{r}
+corn_inc <- arrange(corn_join,Position)
+for(i in 1:10){
+  intermediate_file <- filter(corn_inc, Chromosome == i)
+  write.table(intermediate_file, paste("C:/Users/kiarak/Desktop/Research/Github stuff/Assignment2_KKappelmann/corn",i,"_incr.txt",sep=""),col.names = FALSE, row.names = FALSE, quote = FALSE)
+}
+
+teo_inc <- arrange(teo_join, Position)
+for(i in 1:10){
+  intermediate_file <- filter(teo_inc, Chromosome == i)
+  write.table(intermediate_file, paste("C:/Users/kiarak/Desktop/Research/Github stuff/Assignment2_KKappelmann/teo/",i,"_incr.txt",sep=""),col.names = FALSE, row.names = FALSE, quote = FALSE)
+}
+```
+### Before sorting by decreasing order let's replace missing data with "-" (ignore the warning)
+```{r}
+corn_repl <- as.matrix(corn_join)
+corn_repl <- lapply(corn_join,gsub,pattern = "?", replacement = "-", fixed = TRUE)
+corn_repl <- as_tibble(corn_repl)
+corn_repl$Position <- as.numeric(corn_repl$Position)
+
+teo_repl <- as.matrix(teo_join)
+teo_repl <- lapply(teo_join, gsub, pattern = "?", replacement = "-", fixed = TRUE)
+teo_repl <- as_tibble(teo_repl)
+teo_repl$Position<- as.numeric(teo_repl$Position)
+```
+
+### Now we can sort in decreasing order using " - Position"
+```{r}
+corn_dec <- arrange(corn_repl, -Position)
+
+for(i in 1:10){
+  intermediate_file2 <- filter(corn_dec, Chromosome == i)
+  write.table(intermediate_file2, paste("C:/Users/kiarak/Desktop/Research/Github stuff/Assignment2_KKappelmann/corn/",i,"_dec.txt",sep=""),col.names = FALSE, row.names = FALSE, quote = FALSE)
+}
+
+teo_dec <- arrange(teo_repl,-Position)
+for(i in 1:10){
+  intermediate_file2 <- filter(teo_dec, Chromosome == i)
+  write.table(intermediate_file2, paste("C:/Users/kiarak/Desktop/Research/Github stuff/Assignment2_KKappelmann/teo/",i,"_dec.txt",sep=""),col.names = FALSE, row.names = FALSE, quote = FALSE)
+}
+
+```
+
+## Including Plots to visualize data
+
+You can also embed plots, for example:
+
+```{r}
+
+geno_new2 <- geno[0:2783 , 4:986]
+geno_new3 <- as.data.frame(t(geno_new2),stringsAsFactors=FALSE)
+names(geno_new3)[1]<-"SNP_ID"
+geno_join2 <- merge(snp_new,geno_new3)
+ggplot(geno_join2,aes(x=Chromosome)) + geom_bar( stat = "Count", aes(fill = Chromosome))
+
+ggplot(geno_join2, aes(x=as.numeric(Position))) +
+  geom_density(aes(fill = Chromosome)) + facet_wrap(~as.character(Chromosome)) + theme_bw()
+
+```
+### Missing data and the amount of heterozygosity in each Sample_ID
+### Change the directory based on your settings
+
+```{r}
+geno_H <- read.delim("C:/Users/kiarak/Desktop/Research/Github stuff/Assignment2_KKappelmann/fang_et_al_genotypes.txt", header=T)
+geno_melt <- melt(geno_H,id.var ="Sample_ID",measure.vars=names(geno_H[4:986]))
+geno_new4 <- geno_melt %>% as.matrix()
+geno_new4 [geno_new4 %in% c("A/A","T/T","C/C","G/G")] <- "homozygous"
+geno_new4 [geno_new4 %in% c("A/G","A/T","C/G","C/T","G/T","A/C")] <- "heterozygous"
+geno_new4 <- as.data.frame(geno_new4, stringsAsFactors = FALSE)
+geno_new4 %>% ggplot() + geom_bar(aes(x = Sample_ID, fill=value), position = "fill")
+
+```
+### Proportion of missing data, homozygous and heterozygous sites within each group
+```{r}
+geno_melt2<- melt(geno_H,id.var = "Group",measure.vars = names(geno_H[4:986]))
+geno_new5 <- geno_melt2 %>% as.matrix()
+geno_new5 [geno_new5 %in% c("A/A","T/T","C/C","G/G")] <- "homozygous"
+geno_new5 [geno_new5 %in% c("A/G","A/T","C/G","C/T","G/T","A/C")] <- "heterozygous"
+geno_new5 [geno_new5 %in% c("?/?")] <-"missing"
+geno_new5 <- as.data.frame(geno_new5,stringsAsFactors =FALSE)
+geno_new5 %>% ggplot() + geom_bar(aes(x = Group, fill=value), position = "fill")
+
+```
+```{r}
+ggplot(data=snp) + geom_point(mapping=aes(x=Chromosome,y=Position, color = Chromosome), color="skyblue", size = 1, alpha=0.5) + labs(title = "SNP location on Chromosome", x = "Chromosome", y = "SNP Position") + theme_bw()
+
+```
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
