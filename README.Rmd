@@ -1,0 +1,29 @@
+---
+title: "README"
+author: "Kiara Kappelmann"
+date: "2024-03-09"
+output: html_document
+---
+
+## R Markdown
+
+# This file is to describe the general organization of the GitHub repository and the files needed for others to follow the workflow
+
+## Datafiles
+### `fang_et_al_genotypes.txt` <- this file is denoted as "geno" in the workflow
+### `snp_position.txt` <- this file is denoted as "snp" in the workflow
+
+## Script
+### The code needed to process the files are in the script `Assignment2.Rmd`
+### The script starts by uploading the data files, inspecting, and processing them
+
+# Important note for the script to process on your machine
+## I am pulling files and saving files to a directory within my machine, please change the directory location based on your settings
+
+### Example of where to change the directory is when you see "C:/Users/kiarak/Desktop/Research/Github stuff/Assignment2_KKappelmann/"
+
+### Change to:"C:/YourDirectoryPath/WhereFilesAreSaved/"
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
